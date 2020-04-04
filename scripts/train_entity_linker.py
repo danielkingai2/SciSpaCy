@@ -138,6 +138,7 @@ def main(kb_path, vocab_path, output_dir=None, n_iter=50):
         max_entities_per_mention=40,
     )
 
+    # TODO: this relies on building spacy from source from a pr
     @registry.kb.register("get_candidates")
     def umls_get_candidates(kb, ent):
         doc = nlp.tokenizer(ent.text)
