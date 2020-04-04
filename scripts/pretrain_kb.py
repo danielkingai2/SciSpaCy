@@ -30,6 +30,8 @@ from bin.wiki_entity_linking.train_descriptions import EntityEncoder
 INPUT_DIM = 300  # dimension of pretrained input vectors
 DESC_WIDTH = 64  # dimension of output entity vectors
 
+# TODO: cleanup and style
+
 
 @plac.annotations(
     model=(
@@ -45,7 +47,7 @@ def main(model=None, output_dir=None, n_iter=50):
     """Load the model, create the KB and pretrain the entity encodings.
     If an output_dir is provided, the KB will be stored there in a file 'kb'.
     The updated vocab will also be written to a directory in the output_dir."""
-
+    # TODO: unify vocabs
     nlp = spacy.load(model)  # load existing spaCy model
     print("Loaded model '%s'" % model)
 
@@ -78,6 +80,7 @@ def main(model=None, output_dir=None, n_iter=50):
     freqs = []
     for cui, umls_entity in umls_kb.cui_to_entity.items():
         freq = cui_to_freq.get(cui, 0)
+        # TODO: do we want this filter?
         if umls_entity.definition is None:
             continue
         else:
@@ -101,7 +104,7 @@ def main(model=None, output_dir=None, n_iter=50):
     # set the entities, can also be done by calling `kb.add_entity` for each entity
     kb.set_entities(entity_list=entity_ids, freq_list=freqs, vector_list=embeddings)
 
-    # TODO
+    # TODO: the probabilities here are bad
     # adding aliases, the entities need to be defined in the KB beforehand
     cui_set = set(entity_ids)
     for alias, cuis in umls_kb.alias_to_cuis.items():
@@ -111,7 +114,8 @@ def main(model=None, output_dir=None, n_iter=50):
         kb.add_alias(
             alias=alias,
             entities=filtered_cuis,
-            probabilities=[(1/len(filtered_cuis))]*len(filtered_cuis),  # the sum of these probabilities should not exceed 1
+            probabilities=[(1 / len(filtered_cuis))]
+            * len(filtered_cuis),  # the sum of these probabilities should not exceed 1
         )
 
     # test the trained model

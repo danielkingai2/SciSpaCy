@@ -42,6 +42,8 @@ from scispacy.data_util import MedMentionEntity
 logging.basicConfig()
 logging.getLogger().setLevel(logging.INFO)
 
+# TODO: cleanup and style
+
 def _get_gold_parse(doc, entities, dev, kb):
     gold_entities = {}
     tagged_ent_positions = {(ent.start_char, ent.end_char): ent for ent in doc.ents}
@@ -57,6 +59,7 @@ def _get_gold_parse(doc, entities, dev, kb):
             candidates = kb.get_candidates(alias)
             candidate_ids = [cand.entity_ for cand in candidates]
 
+        # TODO: lots of data gets filtered out here, anything to be done?
         tagged_ent = tagged_ent_positions.get((start, end), None)
         if tagged_ent:
             should_add_ent = dev or entity_id in candidate_ids
@@ -118,12 +121,14 @@ def read_el_docs_golds(nlp, examples, dev, kb):
 def main(kb_path, vocab_path, output_dir=None, n_iter=50):
     """Create a blank model with the specified vocab, set up the pipeline and train the entity linker.
     The `vocab` should be the one used during creation of the KB."""
+    #TODO: need to unify the vocab stuff
     vocab = Vocab().from_disk(vocab_path)
     # create blank Language class with correct vocab
     nlp = spacy.load("en_core_sci_md")
     nlp.vocab = vocab
     print("Loaded model")
 
+    #TODO: try different params here
     linker = UmlsEntityLinker(
         resolve_abbreviations=False,
         k=100,
@@ -151,6 +156,7 @@ def main(kb_path, vocab_path, output_dir=None, n_iter=50):
     # Create the Entity Linker component and add it to the pipeline.
     if "entity_linker" not in nlp.pipe_names:
         # use only the predicted EL score and not the prior probability (for demo purposes)
+        #TODO: other el params?
         cfg = {"incl_prior": False}
         entity_linker = nlp.create_pipe("entity_linker", cfg)
         kb = KnowledgeBase(vocab=nlp.vocab)
@@ -165,6 +171,7 @@ def main(kb_path, vocab_path, output_dir=None, n_iter=50):
     other_pipes = [pipe for pipe in nlp.pipe_names if pipe != "entity_linker"]
     with nlp.disable_pipes(*other_pipes):  # only train Entity Linking
         optimizer = nlp.begin_training()
+        #TODO: params?
         optimizer.learn_rate = 0.005
         optimizer.L2 = 1e-6
 
@@ -173,13 +180,12 @@ def main(kb_path, vocab_path, output_dir=None, n_iter=50):
     dev_docs = list(read_el_docs_golds(nlp, dev, True, kb))
     test_docs = list(read_el_docs_golds(nlp, test, True, kb))
 
-    # import ipdb; ipdb.set_trace()
-
     # get names of other pipes to disable them during training
     print("Starting training...")
     for itn in range(n_iter):
         random.shuffle(train_docs)
         losses = {}
+        #TODO: params
         batches = minibatch(train_docs, size=compounding(8.0, 128.0, 1.001))
         batchnr = 0
         articles_processed = 0
@@ -193,6 +199,7 @@ def main(kb_path, vocab_path, output_dir=None, n_iter=50):
                     docs, golds = zip(*batch)
 
                 with nlp.disable_pipes(*other_pipes):
+                    #TODO: params
                     nlp.update(
                         docs=docs,
                         golds=golds,
